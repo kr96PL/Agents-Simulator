@@ -1,4 +1,11 @@
+import random
+import math
+import matplotlib.pyplot as plt
+import pandas as pd
 from tkinter import *
+from KMeans import *
+from DataGenerator import *
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 window = Tk() #instance of window
 window.geometry("840x420")
@@ -81,5 +88,57 @@ button = Button(window,
                 activebackground="#cc5801")
 
 button.place(x=20, y=170)
+
+
+
+
+data = DataGenerator().generate(100, 0, 1)
+
+# x = []
+# y = []
+
+# for point in data:
+#     x.append(point[0])
+#     y.append(point[1])
+
+# figure1 = plt.Figure(figsize=(5, 5), dpi=100)
+# ax = figure1.add_subplot(111)
+
+# ax.scatter(x, y, color="red")
+
+# canvas = FigureCanvasTkAgg(figure1, window)
+# canvas.draw()
+# canvas.get_tk_widget().place(x=300, y=50)
+
+
+
+data = DataGenerator().generate(100, 0, 1)
+
+kmeans = KMeans(100, data, 2)
+
+group = kmeans.group()
+
+figure1 = plt.Figure(figsize=(5, 5), dpi=100)
+ax = figure1.add_subplot(111)
+
+for k in group:
+    x = []
+    y = []
+
+    for point in k['data']:
+        x.append(point[0])
+        y.append(point[1])
+    print(x)
+    print(y)
+    ax.scatter(x, y)
+
+      
+
+
+# ax.scatter(x, y, color="red")
+
+canvas = FigureCanvasTkAgg(figure1, window)
+canvas.draw()
+canvas.get_tk_widget().place(x=300, y=50)
 
 window.mainloop() #place window on computer screen, listen for events
