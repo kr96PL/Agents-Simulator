@@ -11,7 +11,7 @@ from Policy import *
 from Cycle import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-window = Tk() #instance of window
+window = Tk() 
 window.geometry("1100x600")
 window.title("Agents Simulator")
 window.config(background="#202124")
@@ -23,11 +23,12 @@ def runSimulation():
     C = int(entryCycles.get()) #liczba cykli
     kMin = int(entryKMin.get())
     kMax = int(entryKMax.get())
-    ExpoA = 0
-    ExpoG = 0
-    x = 0
-    y = 0
-    z = 0
+    ExpoA = float(entryExpoA.get())
+    ExpoG = float(entryExpoG.get())
+    V0 = float(entryV0.get())
+    x = 0.1
+    y = 0.1
+    z = 0.1
     sAgent = []
 
     #Losowe wybranie s-agentów z wszystkich agentów
@@ -41,9 +42,9 @@ def runSimulation():
     #iterowanie po każdym cyklu
     for cycle in range(C):
         sumPHToS = .0 
-        numberHJS = 0 #liczba strategicznych klientów dla zaufanych dostawców
+        numberHJS = 0 
         sumPSToH = .0  
-        numberSJH = 0 #liczba zaufanych klientów dla strategicznych dostawców
+        numberSJH = 0 
         counterSSCoop = 0
         counterAllCoop = 0
         adj = {}
@@ -54,7 +55,7 @@ def runSimulation():
         # Parowanie kleintów z dostawca
         for iN in range(N):
             countC = 0
-            clients = random.randint(kMin, kMax) #losowanie liczby klientów z zakresu od kmin do kmax
+            clients = random.randint(kMin, kMax)
             inJ = 0
             rn = 0
             
@@ -74,12 +75,12 @@ def runSimulation():
 
         for iN in range(N):
             clients = adj[iN]
-            vProv = 0 if iC == 0 else 1
+            vProv = V0 if cycle == 0 else 1
             numClients = len(clients)
             meanPolicyR = .0
 
             for client in clients:
-                vRepo = 0 if cycle == 0 else data[cycle - 1].V[client]
+                vRepo = V0 if cycle == 0 else data[cycle - 1].V[client]
                 L = Policy.hStep(vRepo, x)
                 p = Policy.sBiasP(y, L) if iN in sAgent else L 
                 if iN in sAgent and client in sAgent:
@@ -107,6 +108,10 @@ def runSimulation():
             
             meanPolicyR /= numClients
             agentsR[iN] = meanPolicyR
+        
+
+        print(agentsR)
+        sys.exit()
         
 
     # data = DataGenerator().generate(agents, 0, 1)
@@ -161,17 +166,38 @@ labelKMin = Label(window,
                     background="#202124")
 
 labelKMax = Label(window, 
-                     text="Kmax", 
-                     font=('Arial', 9, 'bold'), 
-                     fg="white", 
-                     background="#202124")
+                    text="Kmax", 
+                    font=('Arial', 9, 'bold'), 
+                    fg="white", 
+                    background="#202124")
 
+labelExpoA = Label(window, 
+                    text="ExpoA", 
+                    font=('Arial', 9, 'bold'), 
+                    fg="white", 
+                    background="#202124")
+
+labelExpoG = Label(window, 
+                    text="ExpoG", 
+                    font=('Arial', 9, 'bold'), 
+                    fg="white", 
+                    background="#202124")
+
+labelV0 = Label(window, 
+                    text="V0", 
+                    font=('Arial', 9, 'bold'), 
+                    fg="white", 
+                    background="#202124")
+                       
 labelInputs.place(x=20, y=20)
 labelAgents.place(x=20, y=50)
 labelSAgents.place(x=20, y=80)
 labelCycles.place(x=20, y=110)
 labelKMin.place(x=20, y=140)
 labelKMax.place(x=20, y=170)
+labelExpoA.place(x=260, y=50)
+labelExpoG.place(x=260, y=80)
+labelV0.place(x=260, y=110)
 
 entryAgents = Entry(window,
                     font=('Arial', 9))
@@ -188,17 +214,32 @@ entryKMin = Entry(window,
 entryKMax = Entry(window,
                     font=('Arial', 9))
 
+entryExpoA = Entry(window,
+                    font=('Arial', 9))
+
+entryExpoG = Entry(window,
+                    font=('Arial', 9))       
+
+entryV0 = Entry(window,
+                    font=('Arial', 9))           
+
 entryAgents.insert(0, "1000")
 entrySAgents.insert(0, "150")
 entryCycles.insert(0, "100")
 entryKMin.insert(0, "50")
 entryKMax.insert(0, "150")
+entryExpoA.insert(0, "0.5")
+entryExpoG.insert(0, "0.5")
+entryV0.insert(0, "0.1")
 
-entryAgents.place(x=150, y=50)
-entrySAgents.place(x=150, y=80)
-entryCycles.place(x=150, y=110)
-entryKMin.place(x=150, y=140)
-entryKMax.place(x=150, y=170)
+entryAgents.place(x=100, y=50)
+entrySAgents.place(x=100, y=80)
+entryCycles.place(x=100, y=110)
+entryKMin.place(x=100, y=140)
+entryKMax.place(x=100, y=170)
+entryExpoA.place(x=340, y=50)
+entryExpoG.place(x=340, y=80)
+entryV0.place(x=340, y=110)
 
 button = Button(window, 
                 text="Simulate",
@@ -210,6 +251,6 @@ button = Button(window,
                 activeforeground="white",
                 activebackground="#cc5801")
 
-button.place(x=20, y=200)
+button.place(x=20, y=210)
 
 window.mainloop() #place window on computer screen, listen for events

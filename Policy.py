@@ -23,4 +23,4 @@ class Policy:
 
     @staticmethod
     def randExpoD(expo): 
-        return pow(random.random, 1.0 / expo)
+        return pow(random.random(), 1.0 / expo)
