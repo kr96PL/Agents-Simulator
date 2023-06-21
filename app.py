@@ -1,17 +1,11 @@
-import sys
 import random
 import collections
-import math
 import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 from tkinter import *
 from sklearn.cluster import KMeans
 import numpy as np
-from DataGenerator import *
 from Policy import *
 from Cycle import *
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import time
 import csv
 
@@ -214,7 +208,7 @@ def runSimulation():
         print(f'meanRHigherSet: {meanRHigherSet}, meanRLowerSet: {meanRLowerSet}')
         print(f'meanVs: {meanVs}, meanVh: {meanVh}')
 
-        print('Progres: ', (cycle + 1) / C * 100, end='\n\n')
+        print('Progress:', str(int((cycle + 1) / C * 100)) + "%", end='\n\n')
 
     series = [
         ("meanVh", [cycle.meanVh for cycle in DATA]),
