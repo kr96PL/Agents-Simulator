@@ -24,7 +24,7 @@ DATA = collections.deque([])
 def saveToCsv(series, filename):
     with open(filename, 'w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Cycle'] + [name for name, _ in series])  # Nagłówki kolumn
+        writer.writerow(['Cycle'] + [name for name, _ in series])  
 
         n = len(series[0][1])
         x_values = list(range(1, n + 1))
