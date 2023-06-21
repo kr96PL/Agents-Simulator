@@ -21,7 +21,7 @@ window.title("Agents Simulator")
 window.config(background="#202124")
 DATA = collections.deque([])
 
-def save_tocsv(series, filename):
+def saveToCsv(series, filename):
     with open(filename, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Cycle'] + [name for name, _ in series])  # Nagłówki kolumn
@@ -143,6 +143,8 @@ def runSimulation():
         kmeans.fit(formatDataKMeans)
         labels = kmeans.predict(formatDataKMeans)
 
+        print("cycle " + str(cycle), labels)
+
         meanRHigherSet = 0.0
         meanRLowerSet = 0.0
         c1 = 0
@@ -171,19 +173,24 @@ def runSimulation():
         meanRLowerSet /= meanRHigherSet
         meanRHigherSet /= meanRHigherSet
 
+        print(meanRLowerSet)
+        print(meanRHigherSet)
+
         V = [0.0] * N
 
+        iter = 0
         for label in labels:
             if label == 1:
                 if swap:
-                    V[label] = meanRLowerSet
+                    V[iter] = meanRLowerSet
                 else:
-                    V[label] = meanRHigherSet
+                    V[iter] = meanRHigherSet
             else:
                 if swap:
-                    V[label] = meanRHigherSet
+                    V[iter] = meanRHigherSet
                 else:
-                    V[label] = meanRLowerSet
+                    V[iter] = meanRLowerSet
+            iter += 1
 
         meanVs = 0.0
         meanVh = 0.0
@@ -215,7 +222,7 @@ def runSimulation():
         ("netOutflow", [cycle.netOutFlow for cycle in DATA])
     ]
 
-    save_tocsv(series, 'data.csv')
+    saveToCsv(series, 'data.csv')
     plot_on_frame(series)
 
 
