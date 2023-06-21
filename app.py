@@ -1,11 +1,13 @@
 import sys
 import random
+import collections
 import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from tkinter import *
 from KMeans import *
+from KMeansChat import *
 from DataGenerator import *
 from Policy import *
 from Cycle import *
@@ -16,7 +18,17 @@ window = Tk()
 window.geometry("1100x600")
 window.title("Agents Simulator")
 window.config(background="#202124")
-data = []
+DATA = collections.deque([])
+
+def generateSAgents(agents, sAgents):
+    sAgentList = [0] * agents
+
+    indexes = random.sample(range(agents), sAgents)
+    
+    for index in indexes:
+        sAgentList[index] = 1
+
+    return sAgentList
 
 def plot_on_frame(series):
     n = len(series[0][1])
@@ -33,112 +45,121 @@ def plot_on_frame(series):
     plt.show()
 
 def runSimulation():
+    DATA.clear()
     N = int(entryAgents.get()) #liczba wszystkich agentów
     S = int(entrySAgents.get()) #liczba s-agentów
     C = int(entryCycles.get()) #liczba cykli
     kMin = int(entryKMin.get())
     kMax = int(entryKMax.get())
-    ExpoA = float(entryExpoA.get())
-    ExpoG = float(entryExpoG.get())
+    expoA = float(entryExpoA.get())
+    expoG = float(entryExpoG.get())
     x = float(entryX.get())
     y = float(entryY.get())
     z = float(entryZ.get())
     V0 = 1
-    sAgent = []
+    sAgentList = generateSAgents(N, S)
 
-    #Losowe wybranie s-agentów z wszystkich agentów
-    sAN = 0
-    while (sAN < S):
-        rand = random.randint(0, N)
-        if rand not in sAgent:
-            sAgent.append(rand)
-            sAN += 1
-
-    #iterowanie po każdym cyklu
     for cycle in range(C):
-        sumPHToS = 0.0 
-        numberHJS = 0 
-        sumPSToH = 0.0  
-        numberSJH = 0 
-        counterSSCoop = 0
+        sumPhToS = 0.0
+        numberHjs = 0
+        sumPsToH = 0.0
+        numberSjh = 0
+        counterSsCoop = 0
         counterAllCoop = 0
-        adj = {}
 
-        for adjI in range(N):
-            adj[adjI] = []
+        adj = [[0] * N for _ in range(N)]
 
-        # Parowanie kleintów z dostawca
-        for iN in range(N):
-            clients = random.randint(kMin, kMax)
-            inJ = 0
-            rn = 0
-            
-            while inJ < clients:
-                rn = random.randint(0, N)
-                if rn != iN and rn not in adj[iN]:
-                    adj[iN].append(rn)
-                    if iN in sAgent:
-                        if rn not in sAgent:
-                            numberSJH += 1
+        for i in range(N):
+            clients = random.randint(kMin, kMax + 1)
+            in_j = 0
+            while in_j < clients:
+                rn = random.randint(0, N - 1)
+                if rn != i and adj[i][rn] != 1:
+                    adj[i][rn] = 1
+                    if sAgentList[i] == 1:
+                        if sAgentList[rn] != 1:
+                            numberSjh += 1
                     else:
-                        if rn in sAgent:
-                            numberHJS += 1
-                    inJ += 1
-        
+                        if sAgentList[rn] == 1:
+                            numberHjs += 1
+                    in_j += 1
+
         agentsR = {}
 
-        for iN in range(N):
-            clients = adj[iN]
-            vProv = V0 if cycle == 0 else 1
-            numClients = len(clients)
-            meanPolicyR = .0
+        for it in range(N):
+            clients = adj[it]
+            v_prov = V0 if cycle == 0 else DATA[cycle - 1].V[it]
+            num_clients = clients.count(1)
+            mean_policy_r = 0.0
 
             for j in range(N):
-                vRepo = V0 if cycle == 0 else data[cycle - 1].V[j]
-                L = Policy.hStep(vRepo, x)
-                p = Policy.sBiasP(y, L) if iN in sAgent else L 
-                if iN in sAgent and j in sAgent:
-                    p = 1.0
-                policyP = Policy.providerPolicy(Policy.randExpoD(ExpoA), p)
+                if adj[it][j] == 1:
+                    v_repo = V0 if cycle == 0 else DATA[cycle - 1].V[j]
+                    l = Policy.hStep(v_repo, x)
+                    p = Policy.sBiasP(y, l) if sAgentList[it] == 1 else l
+                    if sAgentList[it] == 1 and sAgentList[j] == 1:
+                        p = 1.0
+                    policy_p = Policy.providerPolicy(Policy.randExpoD(expoA), p)
+                    l = Policy.hStep(v_prov, x)
+                    r = Policy.sBiasR(z, l) if sAgentList[j] == 1 else l
+                    if sAgentList[it] == 1 and sAgentList[j] == 1:
+                        r = 1.0
 
-                L = Policy.hStep(vProv, x)
-                r = Policy.sBiasR(z, L) if client in sAgent else L
-                if iN in sAgent and j in sAgent:
-                    r = 1.0
-                policyR = Policy.reporterPolicy(Policy.randExpoD(ExpoG), policyP, r)
-                meanPolicyR += policyR * vProv
+                    policy_r = Policy.reporterPolicy(Policy.randExpoD(expoG), policy_p, r)
+                    mean_policy_r += policy_r * v_prov
+                    if sAgentList[it] == 1 and sAgentList[j] == 1:
+                        counterSsCoop += 1
+                    counterAllCoop += 1
+                    if sAgentList[it] == 1:
+                        if sAgentList[j] != 1:
+                            sumPsToH += policy_p
+                    else:
+                        if sAgentList[j] == 1:
+                            sumPhToS += policy_p
 
-                if iN in sAgent and j in sAgent: 
-                    counterSSCoop += 1
-                
-                counterAllCoop += 1
+            mean_policy_r /= num_clients
+            agentsR[it] = mean_policy_r
 
-                if iN in sAgent:
-                    if j not in sAgent:
-                        sumPSToH += policyP
-                else:
-                    if j in sAgent:
-                        sumPHToS += policyP
-            
-            meanPolicyR /= numClients
-            agentsR[iN] = meanPolicyR
-        
+        sorted_by_r = {k: v for k, v in sorted(agentsR.items(), key=lambda x: x[1])}
 
-        sortedByR = {k: v for k, v in sorted(agentsR.items(), key=lambda x: x[1])}
+        formatDataKMeans = []
+
+        for iR in range(len(agentsR)):
+            formatDataKMeans.append([agentsR[iR], 1])
+
+        kMeans = KMeans(100, formatDataKMeans, 2)
+
+        group = kMeans.group()
+
+        figure1 = plt.Figure(figsize=(5, 5), dpi=100)
+        ax = figure1.add_subplot(111)
+
+        for k in group:
+            x = []
+            y = []
+
+            for point in k['data']:
+                x.append(point[0])
+                y.append(point[1])
+            ax.scatter(x, y)
+
+        canvas = FigureCanvasTkAgg(figure1, window)
+        canvas.draw()
+        canvas.get_tk_widget().place(x=300, y=50)
 
         meanRHigherSet = 0.0
         meanRLowerSet = 0.0
         iter = 0
-        
-        for value in sortedByR.values():
-            if iter < len(sortedByR) // 2:
+
+        for value in sorted_by_r.values():
+            if iter < len(sorted_by_r) // 2:
                 meanRLowerSet += value
             else:
                 meanRHigherSet += value
             iter += 1
 
-        meanRHigherSet /= len(sortedByR) // 2
-        meanRLowerSet /= len(sortedByR) // 2
+        meanRHigherSet /= len(sorted_by_r) // 2
+        meanRLowerSet /= len(sorted_by_r) // 2
 
         print(f'meanRHigherSet: {meanRHigherSet}, meanRLowerSet: {meanRLowerSet}')
 
@@ -148,8 +169,8 @@ def runSimulation():
         V = [0.0] * N
         iter = 0
 
-        for key in sortedByR.keys():
-            if iter < len(sortedByR) // 2:
+        for key in sorted_by_r.keys():
+            if iter < len(sorted_by_r) // 2:
                 V[key] = meanRLowerSet
             else:
                 V[key] = meanRHigherSet
@@ -159,7 +180,7 @@ def runSimulation():
         meanVh = 0.0
 
         for it in range(N):
-            if it in sAgent:
+            if sAgentList[it] == 1:
                 meanVs += V[it]
             else:
                 meanVh += V[it]
@@ -167,23 +188,25 @@ def runSimulation():
         meanVh /= N - S
         meanVs /= S
 
-        netOutFlow = (sumPHToS / numberHJS) - (sumPSToH / numberSJH)
+        print(sumPhToS)
+        print(numberHjs)
 
-        data.append(Cycle(V, meanVs, meanVh, netOutFlow))
+        netOutFlow = (sumPhToS / numberHjs) - (sumPsToH / numberSjh)
+
+        DATA.append(Cycle(V, meanVs, meanVh, netOutFlow))
 
         time.sleep(0.01)
-        print(f'netOutflow: {netOutFlow}, sumPHToS: {sumPHToS}', end=' ')
-        print(f'numberHJS: {numberHJS}, sumPSToH: {sumPSToH}, numberSJH: {numberSJH}')
+        print(f'netOutflow: {netOutFlow}, sumPHToS: {sumPhToS}', end=' ')
+        print(f'numberHJS: {numberHjs}, sumPSToH: {sumPsToH}, numberSJH: {numberSjh}')
         print(f'meanRHigherSet: {meanRHigherSet}, meanRLowerSet: {meanRLowerSet}')
         print(f'meanVs: {meanVs}, meanVh: {meanVh}')
 
-        # print('Progres: ', (cycle + 1) / cycle * 100, end='\n\n')
+        print('Progres: ', (cycle + 1) / C * 100, end='\n\n')
 
-    print(data)
     series = [
-        ("meanVh", [cycle.meanVh for cycle in data]),
-        ("meanVs", [cycle.meanVs for cycle in data]),
-        ("netOutflow", [cycle.netOutFlow for cycle in data])
+        ("meanVh", [cycle.meanVh for cycle in DATA]),
+        ("meanVs", [cycle.meanVs for cycle in DATA]),
+        ("netOutflow", [cycle.netOutFlow for cycle in DATA])
     ]
 
     plot_on_frame(series)
