@@ -3,7 +3,7 @@ import random
 class Policy:
     @staticmethod
     def hStep(v, x):
-        return 1.0 if v >= 1 - x else .0
+        return 1.0 if v >= 1 - x else 0.0
 
     @staticmethod  
     def sBiasP(y, L):
