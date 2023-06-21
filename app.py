@@ -6,19 +6,32 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from tkinter import *
-from KMeans import *
-from KMeansChat import *
+from sklearn.cluster import KMeans
+import numpy as np
 from DataGenerator import *
 from Policy import *
 from Cycle import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import time
+import csv
 
 window = Tk() 
 window.geometry("1100x600")
 window.title("Agents Simulator")
 window.config(background="#202124")
 DATA = collections.deque([])
+
+def save_tocsv(series, filename):
+    with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Cycle'] + [name for name, _ in series])  # Nagłówki kolumn
+
+        n = len(series[0][1])
+        x_values = list(range(1, n + 1))
+
+        for i in range(n):
+            row = [x_values[i]] + [values[i] for _, values in series]
+            writer.writerow(row)
 
 def generateSAgents(agents, sAgents):
     sAgentList = [0] * agents
@@ -120,46 +133,38 @@ def runSimulation():
             mean_policy_r /= num_clients
             agentsR[it] = mean_policy_r
 
-        sorted_by_r = {k: v for k, v in sorted(agentsR.items(), key=lambda x: x[1])}
 
         formatDataKMeans = []
 
         for iR in range(len(agentsR)):
             formatDataKMeans.append([agentsR[iR], 1])
 
-        kMeans = KMeans(100, formatDataKMeans, 2)
-
-        group = kMeans.group()
-
-        figure1 = plt.Figure(figsize=(5, 5), dpi=100)
-        ax = figure1.add_subplot(111)
-
-        for k in group:
-            x = []
-            y = []
-
-            for point in k['data']:
-                x.append(point[0])
-                y.append(point[1])
-            ax.scatter(x, y)
-
-        canvas = FigureCanvasTkAgg(figure1, window)
-        canvas.draw()
-        canvas.get_tk_widget().place(x=300, y=50)
+        kmeans = KMeans(n_clusters=2, random_state=42)
+        kmeans.fit(formatDataKMeans)
+        labels = kmeans.predict(formatDataKMeans)
 
         meanRHigherSet = 0.0
         meanRLowerSet = 0.0
-        iter = 0
-
-        for value in sorted_by_r.values():
-            if iter < len(sorted_by_r) // 2:
-                meanRLowerSet += value
+        c1 = 0
+        c0 = 0
+        for x in range(len(labels)):
+            if labels[x] == 1:
+                meanRHigherSet += agentsR[x] 
+                c1 += 1
             else:
-                meanRHigherSet += value
-            iter += 1
+                meanRLowerSet += agentsR[x]
+                c0 += 1
 
-        meanRHigherSet /= len(sorted_by_r) // 2
-        meanRLowerSet /= len(sorted_by_r) // 2
+    
+        meanRHigherSet /= c1
+        meanRLowerSet /= c0
+
+        swap = False
+        if meanRHigherSet < meanRLowerSet:
+            tmp = meanRLowerSet
+            meanRLowerSet = meanRHigherSet
+            meanRHigherSet = tmp
+            swap = True
 
         print(f'meanRHigherSet: {meanRHigherSet}, meanRLowerSet: {meanRLowerSet}')
 
@@ -167,14 +172,18 @@ def runSimulation():
         meanRHigherSet /= meanRHigherSet
 
         V = [0.0] * N
-        iter = 0
 
-        for key in sorted_by_r.keys():
-            if iter < len(sorted_by_r) // 2:
-                V[key] = meanRLowerSet
+        for label in labels:
+            if label == 1:
+                if swap:
+                    V[label] = meanRLowerSet
+                else:
+                    V[label] = meanRHigherSet
             else:
-                V[key] = meanRHigherSet
-            iter += 1
+                if swap:
+                    V[label] = meanRHigherSet
+                else:
+                    V[label] = meanRLowerSet
 
         meanVs = 0.0
         meanVh = 0.0
@@ -187,9 +196,6 @@ def runSimulation():
 
         meanVh /= N - S
         meanVs /= S
-
-        print(sumPhToS)
-        print(numberHjs)
 
         netOutFlow = (sumPhToS / numberHjs) - (sumPsToH / numberSjh)
 
@@ -209,6 +215,7 @@ def runSimulation():
         ("netOutflow", [cycle.netOutFlow for cycle in DATA])
     ]
 
+    save_tocsv(series, 'data.csv')
     plot_on_frame(series)
 
 
@@ -325,11 +332,11 @@ entrySAgents.insert(0, "150")
 entryCycles.insert(0, "100")
 entryKMin.insert(0, "50")
 entryKMax.insert(0, "150")
-entryExpoA.insert(0, "0.5")
-entryExpoG.insert(0, "0.5")
-entryX.insert(0, "0.1")
-entryY.insert(0, "0.1")
-entryZ.insert(0, "0.1")
+entryExpoA.insert(0, "10")
+entryExpoG.insert(0, "10")
+entryX.insert(0, "0.8")
+entryY.insert(0, "0.8")
+entryZ.insert(0, "0.8")
 
 entryAgents.place(x=100, y=50)
 entrySAgents.place(x=100, y=80)

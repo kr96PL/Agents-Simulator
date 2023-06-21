@@ -53,7 +53,7 @@ class KMeans:
 
     def countEuclidesDistance(self, point1, point2):
         distance = 0
-        for x in range(len(point1)):
+        for x in range(1):
             distance += pow(point2[x] - point1[x], 2)
         return math.sqrt(distance)
 
