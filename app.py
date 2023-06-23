@@ -8,15 +8,21 @@ from Policy import *
 from Cycle import *
 import time
 import csv
+from datetime import datetime
 
 window = Tk() 
-window.geometry("1100x600")
+window.geometry("520x250")
 window.title("Agents Simulator")
 window.config(background="#202124")
 DATA = collections.deque([])
 
-def saveToCsv(series, filename):
-    with open(filename, 'w', newline='') as file:
+def showProgress(percent):
+    labelProgressPercents.config(text=percent)
+    window.update()
+
+def saveToCsv(series):
+    filename = datetime.now().strftime("%Y-%m-%d %H:%M:%S").replace(" ", "").replace(":", "").replace("-", "") + ".csv"
+    with open("csv/" + filename, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Cycle'] + [name for name, _ in series])  
 
@@ -48,10 +54,10 @@ def plot_on_frame(series):
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Value")
     ax.legend()
-
     plt.show()
 
 def runSimulation():
+    labelProgress.config(text="Progress: ")
     DATA.clear()
     N = int(entryAgents.get()) #liczba wszystkich agentów
     S = int(entrySAgents.get()) #liczba s-agentów
@@ -133,11 +139,9 @@ def runSimulation():
         for iR in range(len(agentsR)):
             formatDataKMeans.append([agentsR[iR], 1])
 
-        kmeans = KMeans(n_clusters=2, random_state=42)
+        kmeans = KMeans(n_clusters=2, random_state=42, n_init=100)
         kmeans.fit(formatDataKMeans)
         labels = kmeans.predict(formatDataKMeans)
-
-        print("cycle " + str(cycle), labels)
 
         meanRHigherSet = 0.0
         meanRLowerSet = 0.0
@@ -151,7 +155,6 @@ def runSimulation():
                 meanRLowerSet += agentsR[x]
                 c0 += 1
 
-    
         meanRHigherSet /= c1
         meanRLowerSet /= c0
 
@@ -162,13 +165,8 @@ def runSimulation():
             meanRHigherSet = tmp
             swap = True
 
-        print(f'meanRHigherSet: {meanRHigherSet}, meanRLowerSet: {meanRLowerSet}')
-
         meanRLowerSet /= meanRHigherSet
         meanRHigherSet /= meanRHigherSet
-
-        print(meanRLowerSet)
-        print(meanRHigherSet)
 
         V = [0.0] * N
 
@@ -207,8 +205,8 @@ def runSimulation():
         print(f'numberHJS: {numberHjs}, sumPSToH: {sumPsToH}, numberSJH: {numberSjh}')
         print(f'meanRHigherSet: {meanRHigherSet}, meanRLowerSet: {meanRLowerSet}')
         print(f'meanVs: {meanVs}, meanVh: {meanVh}')
-
-        print('Progress:', str(int((cycle + 1) / C * 100)) + "%", end='\n\n')
+        progress = str(int((cycle + 1) / C * 100)) + "%"
+        showProgress(progress)
 
     series = [
         ("meanVh", [cycle.meanVh for cycle in DATA]),
@@ -216,7 +214,7 @@ def runSimulation():
         ("netOutflow", [cycle.netOutFlow for cycle in DATA])
     ]
 
-    saveToCsv(series, 'data.csv')
+    saveToCsv(series)
     plot_on_frame(series)
 
 
@@ -285,6 +283,18 @@ labelZ = Label(window,
                     font=('Arial', 9, 'bold'), 
                     fg="white", 
                     background="#202124")
+
+labelProgress = Label(window, 
+                    text="", 
+                    font=('Arial', 9, 'bold'), 
+                    fg="white", 
+                    background="#202124")
+
+labelProgressPercents = Label(window, 
+                    text="",
+                    font=('Arial', 9, 'bold'), 
+                    fg="white", 
+                    background="#202124")
                        
 labelInputs.place(x=20, y=20)
 labelAgents.place(x=20, y=50)
@@ -297,6 +307,8 @@ labelExpoG.place(x=260, y=80)
 labelX.place(x=260, y=110)
 labelY.place(x=260, y=140)
 labelZ.place(x=260, y=170)
+labelProgress.place(x=400, y=210)
+labelProgressPercents.place(x=460, y=210)
 
 entryAgents = Entry(window,
                     font=('Arial', 9))
@@ -349,6 +361,7 @@ entryExpoG.place(x=340, y=80)
 entryX.place(x=340, y=110)
 entryY.place(x=340, y=140)
 entryZ.place(x=340, y=170)
+
 
 button = Button(window, 
                 text="Simulate",
