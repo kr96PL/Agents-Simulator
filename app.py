@@ -47,7 +47,7 @@ def plot_on_frame(series):
     n = len(series[0][1])
     x_values = list(range(1, n + 1))
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12,6))
     for name, values in series:
         ax.plot(x_values, values, label=name)
 
@@ -341,15 +341,15 @@ entryZ = Entry(window,
                     font=('Arial', 9))     
    
 entryAgents.insert(0, "1000")
-entrySAgents.insert(0, "150")
+entrySAgents.insert(0, "50")
 entryCycles.insert(0, "100")
 entryKMin.insert(0, "50")
 entryKMax.insert(0, "150")
 entryExpoA.insert(0, "10")
 entryExpoG.insert(0, "10")
-entryX.insert(0, "0.8")
-entryY.insert(0, "0.8")
-entryZ.insert(0, "0.8")
+entryX.insert(0, "0.5")
+entryY.insert(0, "0.5")
+entryZ.insert(0, "0.5")
 
 entryAgents.place(x=100, y=50)
 entrySAgents.place(x=100, y=80)
@@ -375,4 +375,4 @@ button = Button(window,
 
 button.place(x=20, y=210)
 
-window.mainloop() #place window on computer screen, listen for events
+window.mainloop() 
